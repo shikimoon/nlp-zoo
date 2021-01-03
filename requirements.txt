@@ -1,4 +1,0 @@
-numpy==1.16.6
-pytorch_pretrained_bert==0.6.2
-torch==1.4.0
-sklearn_crfsuite==0.3.6
