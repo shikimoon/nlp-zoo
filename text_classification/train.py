@@ -6,8 +6,8 @@ import torch.nn.functional as F
 from pytorch_pretrained_bert.optimization import BertAdam
 from sklearn import metrics
 
-from predict import evaluate
-from utils import get_time_dif
+from text_classification.predict import evaluate
+from text_classification.utils import get_time_dif
 
 
 def train(config, model, train_iter, dev_iter, test_iter):

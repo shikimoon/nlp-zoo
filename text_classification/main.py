@@ -6,8 +6,8 @@ from importlib import import_module
 import numpy as np
 import torch
 
-from train import train
-from utils import build_dataset, build_iterator, get_time_dif
+from text_classification.train import train
+from text_classification.utils import build_dataset, build_iterator, get_time_dif
 
 parser = argparse.ArgumentParser(description='Chinese Text Classification')
 parser.add_argument('--model', type=str, required=True, help='choose a model: Bert, ERNIE')
