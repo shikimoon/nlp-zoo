@@ -5,6 +5,13 @@ import numpy as np
 from torch.utils.data import Dataset
 from transformers import BertTokenizer
 
+input_colses = {
+    'bert_spc': ['global_context_indices', 'global_segments_indices'],
+    'aen_bert': ['local_context_indices', 'aspect_bert_indices'],
+    'lcf_bert': ['global_context_indices', 'global_segments_indices', 'local_context_indices',
+                 'aspect_bert_indices'],
+}
+
 
 def pad_and_truncate(sequence, maxlen, dtype='int64', padding='post', truncating='post', value=0):
     x = (np.ones(maxlen) * value).astype(dtype)

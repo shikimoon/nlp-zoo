@@ -6,6 +6,13 @@ import math
 import os
 import random
 import sys
+
+curPath = os.path.abspath(os.path.dirname(__file__))
+rootPath = os.path.split(curPath)[0]
+sys.path.append(rootPath)
+
+from absa.model import model_classes
+
 import time
 from time import strftime, localtime
 
@@ -16,10 +23,7 @@ from sklearn import metrics
 from torch.utils.data import DataLoader
 from transformers import BertModel
 
-from absa.data_utils import Tokenizer4Bert, ABSA_Train_Dataset
-from absa.model.aen import AEN_BERT
-from absa.model.bert_spc import BERT_SPC
-from absa.model.lcf_bert import LCF_BERT
+from absa.data_utils import Tokenizer4Bert, ABSA_Train_Dataset, input_colses
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -29,14 +33,9 @@ logger.addHandler(logging.StreamHandler(sys.stdout))
 class Trainer:
     def __init__(self, opt):
         self.opt = opt
-
-        if 'bert' in opt.model_name:
-            tokenizer = Tokenizer4Bert(opt.max_seq_len, opt.pretrained_bert_name)
-            bert = BertModel.from_pretrained(opt.pretrained_bert_name)
-            self.model = opt.model_class(bert, opt).to(opt.device)
-        else:
-            print("model_name does not support!")
-            return
+        tokenizer = Tokenizer4Bert(opt.max_seq_len, opt.pretrained_bert_name)
+        bert = BertModel.from_pretrained(opt.pretrained_bert_name)
+        self.model = opt.model_class(bert, opt).to(opt.device)
 
         self.trainset = ABSA_Train_Dataset(opt.dataset_file['train'], tokenizer)
         self.testset = ABSA_Train_Dataset(opt.dataset_file['test'], tokenizer)
@@ -118,7 +117,6 @@ class Trainer:
         logger.info("all cost time: {:.4f}".format(time.time() - begin_time))
 
     def evaluate(self, data_loader):
-        logger.info('start evaluate')
         all_targets, all_output = None, None
         # switch model to evaluation mode
         self.model.eval()
@@ -138,9 +136,6 @@ class Trainer:
         y_pred = torch.argmax(all_output, -1).cpu()
         f1 = metrics.f1_score(y_true, y_pred, average='weighted')
         report = metrics.classification_report(y_true, y_pred, digits=4)
-        print("*************************")
-        print("*************************")
-        print("*************************")
         print(report)
         return f1
 
@@ -157,11 +152,11 @@ def main():
     parser.add_argument('--l2reg', default=0.01, type=float)
     parser.add_argument('--num_epoch', default=5, type=int, help='try larger number for non-BERT models')
     parser.add_argument('--batch_size', default=64, type=int, help='try 16, 32, 64 for BERT models')
-    parser.add_argument('--log_step', default=100, type=int)
+    parser.add_argument('--log_step', default=5, type=int)
     parser.add_argument('--embed_dim', default=300, type=int)
     parser.add_argument('--hidden_dim', default=300, type=int)
     parser.add_argument('--bert_dim', default=768, type=int)
-    parser.add_argument('--pretrained_bert_name', default='pretrain_model/bert/', type=str)
+    parser.add_argument('--pretrained_bert_name', default='../pretrain_model/bert/', type=str)
     parser.add_argument('--max_seq_len', default=80, type=int)
     parser.add_argument('--polarities_dim', default=3, type=int)
     parser.add_argument('--hops', default=3, type=int)
@@ -180,23 +175,15 @@ def main():
         torch.backends.cudnn.benchmark = False
         os.environ['PYTHONHASHSEED'] = str(opt.seed)
 
-    model_classes = {
-        'bert_spc': BERT_SPC,
-        'aen_bert': AEN_BERT,
-        'lcf_bert': LCF_BERT,
-    }
     dataset_files = {
         'camera': {
             'train': 'data/camera/train.txt',
             'test': 'data/camera/test.txt'
         },
     }
-    input_colses = {
-        'bert_spc': ['global_context_indices', 'global_segments_indices'],
-        'aen_bert': ['local_context_indices', 'aspect_bert_indices'],
-        'lcf_bert': ['global_context_indices', 'global_segments_indices', 'local_context_indices',
-                     'aspect_bert_indices'],
-    }
+    if opt.model_name not in model_classes:
+        print("model_name does not support!")
+        return
     opt.model_class = model_classes[opt.model_name]
     opt.dataset_file = dataset_files[opt.dataset]
     opt.inputs_cols = input_colses[opt.model_name]
