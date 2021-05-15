@@ -7,6 +7,8 @@ import os
 import random
 import sys
 
+from tokenization import Tokenizer4Bert
+
 curPath = os.path.abspath(os.path.dirname(__file__))
 rootPath = os.path.split(curPath)[0]
 sys.path.append(rootPath)
@@ -23,7 +25,7 @@ from sklearn import metrics
 from torch.utils.data import DataLoader
 from transformers import BertModel
 
-from absa.data_utils import Tokenizer4Bert, ABSA_Train_Dataset, input_colses
+from absa.data_utils import ABSA_Train_Dataset, input_colses
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

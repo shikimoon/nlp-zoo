@@ -2,6 +2,8 @@ import argparse
 import os
 import sys
 
+from tokenization import Tokenizer4Bert
+
 curPath = os.path.abspath(os.path.dirname(__file__))
 rootPath = os.path.split(curPath)[0]
 sys.path.append(rootPath)
@@ -13,7 +15,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from transformers import BertModel
 
-from absa.data_utils import Tokenizer4Bert, ABSA_Test_Dataset, input_colses
+from absa.data_utils import ABSA_Test_Dataset, input_colses
 
 
 class Infer:

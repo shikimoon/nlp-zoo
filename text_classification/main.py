@@ -1,35 +1,40 @@
 # coding: UTF-8
 import argparse
+import os
+import sys
 import time
 from importlib import import_module
 
+curPath = os.path.abspath(os.path.dirname(__file__))
+rootPath = os.path.split(curPath)[0]
+sys.path.append(rootPath)
 import numpy as np
 import torch
 
 from text_classification.train import train
-from text_classification.utils import build_dataset, build_iterator, get_time_dif
+from text_classification.data_utils import get_time_dif, DatasetIterater
 
 parser = argparse.ArgumentParser(description='Chinese Text Classification')
-parser.add_argument('--model', type=str, required=True, help='choose a model: Bert, ERNIE')
+parser.add_argument('--model', default='bert', type=str, help='choose a model: Bert, ERNIE')
 args = parser.parse_args()
 
 if __name__ == '__main__':
     dataset = 'THUCNews'  # 数据集
 
     model_name = args.model  # bert
-    x = import_module('models.' + model_name)
+    x = import_module('model.' + model_name)
     config = x.Config(dataset)
     np.random.seed(1)
     torch.manual_seed(1)
     torch.cuda.manual_seed_all(1)
-    torch.backends.cudnn.deterministic = True  # 保证每次结果一样
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
     start_time = time.time()
     print("Loading data...")
-    train_data, dev_data, test_data = build_dataset(config)
-    train_iter = build_iterator(train_data, config)
-    dev_iter = build_iterator(dev_data, config)
-    test_iter = build_iterator(test_data, config)
+    train_iter = DatasetIterater(config.train_path, config)
+    dev_iter = DatasetIterater(config.dev_path, config)
+    test_iter = DatasetIterater(config.test_path, config)
     time_dif = get_time_dif(start_time)
     print("Time usage:", time_dif)
 

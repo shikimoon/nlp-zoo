@@ -3,7 +3,8 @@ import math
 
 import numpy as np
 from torch.utils.data import Dataset
-from transformers import BertTokenizer
+
+from tokenization import pad_and_truncate
 
 input_colses = {
     'bert_spc': ['global_context_indices', 'global_segments_indices'],
@@ -11,20 +12,6 @@ input_colses = {
     'lcf_bert': ['global_context_indices', 'global_segments_indices', 'local_context_indices',
                  'aspect_bert_indices'],
 }
-
-
-def pad_and_truncate(sequence, maxlen, dtype='int64', padding='post', truncating='post', value=0):
-    x = (np.ones(maxlen) * value).astype(dtype)
-    if truncating == 'pre':
-        trunc = sequence[-maxlen:]
-    else:
-        trunc = sequence[:maxlen]
-    trunc = np.asarray(trunc, dtype=dtype)
-    if padding == 'post':
-        x[:len(trunc)] = trunc
-    else:
-        x[-len(trunc):] = trunc
-    return x
 
 
 def cut_text(text_left, aspect, text_right, max_len):
@@ -42,23 +29,9 @@ def cut_text(text_left, aspect, text_right, max_len):
     return text_left, text_right
 
 
-class Tokenizer4Bert:
-    def __init__(self, max_seq_len, pretrained_bert_name):
-        self.tokenizer = BertTokenizer.from_pretrained(pretrained_bert_name)
-        self.max_seq_len = max_seq_len
-
-    def text_to_sequence(self, text, reverse=False, padding='post', truncating='post'):
-        sequence = self.tokenizer.convert_tokens_to_ids(self.tokenizer.tokenize(text))
-        if len(sequence) == 0:
-            sequence = [0]
-        if reverse:
-            sequence = sequence[::-1]
-        return pad_and_truncate(sequence, self.max_seq_len, padding=padding, truncating=truncating)
-
-
 class ABSA_Train_Dataset(Dataset):
-    def __init__(self, fname, tokenizer):
-        fin = open(fname, 'r', encoding='utf-8', newline='\n', errors='ignore')
+    def __init__(self, data_path, tokenizer):
+        fin = open(data_path, 'r', encoding='utf-8', newline='\n', errors='ignore')
         lines = fin.readlines()
         fin.close()
 
