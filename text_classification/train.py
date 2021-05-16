@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from transformers.optimization import AdamW
 
 from text_classification.infer import evaluate
-from text_classification.data_utils import get_time_dif
+from text_classification.data_utils import get_time_dif, Text_Classification_Dataset
 import argparse
 import logging
 import math
@@ -93,8 +93,9 @@ class Trainer:
         bert = BertModel.from_pretrained(opt.pretrained_bert_name)
         self.model = opt.model_class(bert, opt).to(opt.device)
 
-        self.trainset = ABSA_Train_Dataset(opt.dataset_file['train'], tokenizer)
-        self.testset = ABSA_Train_Dataset(opt.dataset_file['test'], tokenizer)
+        self.train_set = Text_Classification_Dataset(opt.dataset_file['train'], tokenizer)
+        self.dev_set = Text_Classification_Dataset(opt.dataset_file['dev'], tokenizer)
+        self.test_set = Text_Classification_Dataset(opt.dataset_file['test'], tokenizer)
 
         if opt.device.type == 'cuda':
             logger.info('cuda memory allocated: {}'.format(torch.cuda.memory_allocated(device=opt.device.index)))
@@ -132,8 +133,9 @@ class Trainer:
         _params = filter(lambda p: p.requires_grad, self.model.parameters())
         optimizer = torch.optim.Adam(_params, lr=self.opt.lr, weight_decay=self.opt.l2reg)
 
-        train_data_loader = DataLoader(dataset=self.trainset, batch_size=self.opt.batch_size, shuffle=True)
-        test_data_loader = DataLoader(dataset=self.testset, batch_size=self.opt.batch_size * 12, shuffle=False)
+        train_data_loader = DataLoader(dataset=self.train_set, batch_size=self.opt.batch_size, shuffle=True)
+        dev_data_loader = DataLoader(dataset=self.train_set, batch_size=self.opt.batch_size * 12, shuffle=False)
+        test_data_loader = DataLoader(dataset=self.test_set, batch_size=self.opt.batch_size * 12, shuffle=False)
 
         self._reset_params()
 
@@ -234,7 +236,6 @@ def main():
         return
     opt.model_class = model_classes[opt.model_name]
     opt.dataset_file = dataset_files[opt.dataset]
-    opt.inputs_cols = input_colses[opt.model_name]
     opt.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     log_file = '{}-{}-{}.log'.format(opt.model_name, opt.dataset, strftime("%y%m%d-%H%M", localtime()))

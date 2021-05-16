@@ -12,7 +12,7 @@ import numpy as np
 import torch
 
 from text_classification.train import train
-from text_classification.data_utils import get_time_dif, DatasetIterater
+from text_classification.data_utils import get_time_dif, Text_Classification_Dataset
 
 parser = argparse.ArgumentParser(description='Chinese Text Classification')
 parser.add_argument('--model', default='bert', type=str, help='choose a model: Bert, ERNIE')
@@ -32,9 +32,9 @@ if __name__ == '__main__':
 
     start_time = time.time()
     print("Loading data...")
-    train_iter = DatasetIterater(config.train_path, config)
-    dev_iter = DatasetIterater(config.dev_path, config)
-    test_iter = DatasetIterater(config.test_path, config)
+    train_iter = Text_Classification_Dataset(config.train_path, config)
+    dev_iter = Text_Classification_Dataset(config.dev_path, config)
+    test_iter = Text_Classification_Dataset(config.test_path, config)
     time_dif = get_time_dif(start_time)
     print("Time usage:", time_dif)
 

@@ -39,8 +39,8 @@ class Trainer:
         bert = BertModel.from_pretrained(opt.pretrained_bert_name)
         self.model = opt.model_class(bert, opt).to(opt.device)
 
-        self.trainset = ABSA_Train_Dataset(opt.dataset_file['train'], tokenizer)
-        self.testset = ABSA_Train_Dataset(opt.dataset_file['test'], tokenizer)
+        self.train_set = ABSA_Train_Dataset(opt.dataset_file['train'], tokenizer)
+        self.test_set = ABSA_Train_Dataset(opt.dataset_file['test'], tokenizer)
 
         if opt.device.type == 'cuda':
             logger.info('cuda memory allocated: {}'.format(torch.cuda.memory_allocated(device=opt.device.index)))
@@ -78,8 +78,8 @@ class Trainer:
         _params = filter(lambda p: p.requires_grad, self.model.parameters())
         optimizer = torch.optim.Adam(_params, lr=self.opt.lr, weight_decay=self.opt.l2reg)
 
-        train_data_loader = DataLoader(dataset=self.trainset, batch_size=self.opt.batch_size, shuffle=True)
-        test_data_loader = DataLoader(dataset=self.testset, batch_size=self.opt.batch_size * 12, shuffle=False)
+        train_data_loader = DataLoader(dataset=self.train_set, batch_size=self.opt.batch_size, shuffle=True)
+        test_data_loader = DataLoader(dataset=self.test_set, batch_size=self.opt.batch_size * 12, shuffle=False)
 
         self._reset_params()
 

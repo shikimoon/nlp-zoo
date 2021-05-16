@@ -22,7 +22,7 @@ class_list = [
 ]
 
 
-class DatasetIterater(Dataset):
+class Text_Classification_Dataset(Dataset):
     def __init__(self, data_path, config):
         batches = []
         with open(data_path, 'r', encoding='utf-8') as f:
