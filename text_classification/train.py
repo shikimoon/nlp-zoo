@@ -29,6 +29,7 @@ import torch.nn as nn
 from sklearn import metrics
 from torch.utils.data import DataLoader
 from transformers import BertModel
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 logger.addHandler(logging.StreamHandler(sys.stdout))
@@ -93,9 +94,9 @@ class Trainer:
         bert = BertModel.from_pretrained(opt.pretrained_bert_name)
         self.model = opt.model_class(bert, opt).to(opt.device)
 
-        self.train_set = Text_Classification_Dataset(opt.dataset_file['train'], tokenizer)
-        self.dev_set = Text_Classification_Dataset(opt.dataset_file['dev'], tokenizer)
-        self.test_set = Text_Classification_Dataset(opt.dataset_file['test'], tokenizer)
+        self.train_set = Text_Classification_Dataset(opt.dataset_file['train'], opt, tokenizer)
+        self.dev_set = Text_Classification_Dataset(opt.dataset_file['dev'], opt, tokenizer)
+        self.test_set = Text_Classification_Dataset(opt.dataset_file['test'], opt, tokenizer)
 
         if opt.device.type == 'cuda':
             logger.info('cuda memory allocated: {}'.format(torch.cuda.memory_allocated(device=opt.device.index)))
@@ -131,7 +132,12 @@ class Trainer:
         begin_time = time.time()
         criterion = nn.CrossEntropyLoss()
         _params = filter(lambda p: p.requires_grad, self.model.parameters())
-        optimizer = torch.optim.Adam(_params, lr=self.opt.lr, weight_decay=self.opt.l2reg)
+        param_optimizer = list(self.model.named_parameters())
+        no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
+        optimizer_grouped_parameters = [
+            {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01},
+            {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}]
+        optimizer = AdamW(optimizer_grouped_parameters, lr=self.opt.lr)
 
         train_data_loader = DataLoader(dataset=self.train_set, batch_size=self.opt.batch_size, shuffle=True)
         dev_data_loader = DataLoader(dataset=self.train_set, batch_size=self.opt.batch_size * 12, shuffle=False)
@@ -146,21 +152,19 @@ class Trainer:
             logger.info('epoch: {}'.format(i_epoch))
             epoch_begin_time = time.time()
             # switch model to training mode
-            for i_batch, batch in enumerate(train_data_loader):
+            for i_batch, (trains, labels) in enumerate(train_data_loader):
                 global_step += 1
                 # switch model to training mode, clear gradient accumulators
                 self.model.train()
-                optimizer.zero_grad()
+                outputs = self.model(trains)
+                self.model.zero_grad()
 
-                inputs = [batch[col].to(self.opt.device) for col in self.opt.inputs_cols]
-                outputs = self.model(inputs)
-                targets = batch['polarity'].to(self.opt.device)
-
-                loss = criterion(outputs, targets)
+                loss = criterion(outputs, labels)
                 loss.backward()
                 optimizer.step()
 
                 if global_step % self.opt.log_step == 0:
+                    ##todo
                     f1 = self.evaluate(test_data_loader)
                     if not os.path.exists(self.opt.model_dir):
                         os.mkdir(self.opt.model_dir)
@@ -227,8 +231,8 @@ def main():
     dataset_files = {
         'THUCNews': {
             'train': 'data/THUCNews/train.txt',
-            'test': 'data/camera/test.txt',
-            'dev': 'data/camera/dev.txt'
+            'test': 'data/THUCNews/test.txt',
+            'dev': 'data/THUCNews/dev.txt'
         },
     }
     if opt.model_name not in model_classes:

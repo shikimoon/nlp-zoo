@@ -32,9 +32,9 @@ if __name__ == '__main__':
 
     start_time = time.time()
     print("Loading data...")
-    train_iter = Text_Classification_Dataset(config.train_path, config)
-    dev_iter = Text_Classification_Dataset(config.dev_path, config)
-    test_iter = Text_Classification_Dataset(config.test_path, config)
+    train_iter = Text_Classification_Dataset(config.train_path, config, config.tokenizer)
+    dev_iter = Text_Classification_Dataset(config.dev_path, config, config.tokenizer)
+    test_iter = Text_Classification_Dataset(config.test_path, config, config.tokenizer)
     time_dif = get_time_dif(start_time)
     print("Time usage:", time_dif)
 

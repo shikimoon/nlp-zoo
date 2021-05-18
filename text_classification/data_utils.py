@@ -23,7 +23,7 @@ class_list = [
 
 
 class Text_Classification_Dataset(Dataset):
-    def __init__(self, data_path, config):
+    def __init__(self, data_path, config, tokenizer):
         batches = []
         with open(data_path, 'r', encoding='utf-8') as f:
             for line in tqdm(f):
@@ -31,11 +31,11 @@ class Text_Classification_Dataset(Dataset):
                 if not lin:
                     continue
                 content, label = lin.split('\t')
-                token = config.tokenizer.tokenize(content)
+                token = tokenizer.tokenize(content)
                 token = [CLS] + token
                 seq_len = len(token)
                 mask = []
-                token_ids = config.tokenizer.convert_tokens_to_ids(token)
+                token_ids = tokenizer.convert_tokens_to_ids(token)
 
                 if config.max_seq_len:
                     if len(token) < config.max_seq_len:
