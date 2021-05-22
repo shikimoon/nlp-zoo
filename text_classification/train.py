@@ -57,10 +57,7 @@ def train(config, model, train_iter, dev_iter, test_iter):
             optimizer.step()
             if total_batch % 100 == 0:
                 # 每多少轮输出在训练集和验证集上的效果
-                true = labels.data.cpu()
-                predic = torch.max(outputs.data, 1)[1].cpu()
-                train_acc = metrics.accuracy_score(true, predic)
-                dev_acc, dev_loss = evaluate(config, model, dev_iter)
+                dev_acc, dev_loss = evaluate(model, dev_iter)
                 if dev_loss < dev_best_loss:
                     dev_best_loss = dev_loss
                     torch.save(model.state_dict(), config.save_path)
@@ -76,7 +73,7 @@ def test(config, model, test_iter):
     model.load_state_dict(torch.load(config.save_path))
     model.eval()
     start_time = time.time()
-    test_acc, test_loss, test_report, test_confusion = evaluate(config, model, test_iter, test=True)
+    test_acc, test_loss, test_report, test_confusion = evaluate(model, test_iter, test=True)
     msg = 'Test Loss: {0:>5.2},  Test Acc: {1:>6.2%}'
     print(msg.format(test_loss, test_acc))
     print("Precision, Recall and F1-Score...")

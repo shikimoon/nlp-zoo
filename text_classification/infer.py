@@ -7,7 +7,7 @@ from sklearn import metrics
 from text_classification.data_utils import class_list
 
 
-def evaluate(config, model, data_iter, test=False):
+def evaluate(model, data_iter, test=False):
     model.eval()
     loss_total = 0
     predict_all = np.array([], dtype=int)
