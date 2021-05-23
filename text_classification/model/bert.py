@@ -14,7 +14,7 @@ class Config(object):
 
     def __init__(self, dataset):
         self.model_name = 'bert'
-        self.train_path = "data/%s/train.txt" % dataset  # 训练集
+        self.train_path = "data/%s/train_sample.txt" % dataset  # 训练集
         self.dev_path = "data/%s/dev.txt" % dataset  # 验证集
         self.test_path = "data/%s/test.txt" % dataset  # 测试集
         model_dir = "ckpt"

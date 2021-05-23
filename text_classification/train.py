@@ -8,7 +8,7 @@ sys.path.append(rootPath)
 import torch.nn.functional as F
 from transformers.optimization import AdamW
 
-from text_classification.infer import evaluate
+from text_classification.infer import evaluate, evaluate_dataloader
 from text_classification.data_utils import get_time_dif, Text_Classification_Dataset
 import argparse
 import logging
@@ -149,7 +149,8 @@ class Trainer:
             logger.info('epoch: {}'.format(i_epoch))
             epoch_begin_time = time.time()
             # switch model to training mode
-            for i_batch, (trains, labels) in enumerate(train_data_loader):
+            for i_batch, batch in enumerate(train_data_loader):
+                trains, labels = batch
                 global_step += 1
                 # switch model to training mode, clear gradient accumulators
                 self.model.train()
@@ -162,18 +163,22 @@ class Trainer:
 
                 if global_step % self.opt.log_step == 0:
                     ##todo
-                    f1 = self.evaluate(test_data_loader)
-                    if not os.path.exists(self.opt.model_dir):
-                        os.mkdir(self.opt.model_dir)
-                    if f1 > best_f1:
-                        best_f1 = f1
+                    # f1 = self.evaluate(test_data_loader)
+                    # if not os.path.exists(self.opt.model_dir):
+                    #     os.mkdir(self.opt.model_dir)
+                    # if f1 > best_f1:
+                    #     best_f1 = f1
+                    #     torch.save(self.model.state_dict(), os.path.join(self.opt.model_dir, "model.pt"))
+
+                    # 每多少轮输出在训练集和验证集上的效果
+                    dev_acc, dev_loss = evaluate_dataloader(self.model, dev_data_loader)
+                    if dev_loss < dev_best_loss:
+                        dev_best_loss = dev_loss
                         torch.save(self.model.state_dict(), os.path.join(self.opt.model_dir, "model.pt"))
             logger.info('epoch{} cost time:: {:.4f}'.format(i_epoch, time.time() - epoch_begin_time))
 
         self.model.load_state_dict(torch.load(os.path.join(self.opt.model_dir, "model.pt")))
-        test_f1 = self.evaluate(test_data_loader)
-        logger.info('>> test_f1: {:.4f}'.format(test_f1))
-        logger.info("all cost time: {:.4f}".format(time.time() - begin_time))
+        test(self.opt, self.model, test_data_loader)
 
     def evaluate(self, data_loader):
         all_targets, all_output = None, None
@@ -227,7 +232,7 @@ def main():
 
     dataset_files = {
         'THUCNews': {
-            'train': 'data/THUCNews/train.txt',
+            'train': 'data/THUCNews/train_sample.txt',
             'test': 'data/THUCNews/test.txt',
             'dev': 'data/THUCNews/dev.txt'
         },
